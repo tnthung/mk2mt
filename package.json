@@ -1,0 +1,25 @@
+{
+  "name": "mk2mt",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "tsc && node dist/test.js",
+    "prepublish": "rm -rf dist && tsc"
+  },
+  "author": "TNThung",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  },
+	"files": [
+		"dist",
+		"!dist/**/*.test.*",
+		"!dist/**/*.spec.*"
+	],
+	"keywords": [
+		"map",
+    "multi-key",
+    "multi-type"
+	]
+}
