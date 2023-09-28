@@ -2,7 +2,7 @@
 
 export class MK2MT<P extends [string[], any]> {
   #k2v = new Map<P[0][number], Set<P[1]>>();
-  #val = [] as P[1][];
+  #val = new Set<P[1]>();
 
   public get tags  () { return this.#k2v.keys(); }
   public get values() { return this.#val;        }
@@ -19,7 +19,7 @@ export class MK2MT<P extends [string[], any]> {
       values.add(value);
     }
 
-    this.#val.push(value);
+    this.#val.add(value);
   }
 
   public get<K extends P[0][number]>(...tags: K[]):
@@ -31,15 +31,13 @@ export class MK2MT<P extends [string[], any]> {
         : never
       : never
   {
-    const vals = tags.map(tag => this.#k2v.get(tag))
-      .filter(v => v != null) as Set<P[1]>[];
+    const vals = tags.map(tag => this.#k2v.get(tag) ?? new Set());
     if (vals.length === 0) return undefined as any;
 
-    const intersection = new Set(vals[0]);
-    for (let i=1; i<vals.length; i++)
-      for (const v of vals[i])
-        if (!intersection.has(v))
-          intersection.delete(v);
+    let intersection = new Set(vals[0]);
+    for (const val of vals)
+      intersection = new Set([...intersection]
+        .filter(v => val.has(v)));
 
     if (intersection.size === 0)
       return undefined as any;
