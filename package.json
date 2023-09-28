@@ -1,6 +1,6 @@
 {
   "name": "mk2mt",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -12,6 +12,12 @@
   "devDependencies": {
     "typescript": "^5.2.2"
   },
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"svelte": "./dist/index.js"
+		}
+	},
 	"files": [
 		"dist",
 		"!dist/**/*.test.*",
