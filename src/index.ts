@@ -40,12 +40,11 @@ export class MK2MT<P extends [string[], any]> {
 
   #k2v = new Map<P[0][number], Set<P[1]>>();
   #v2h = new Map<P[1], Set<string>>();
-  #h2k = new Map<string, P[0]>();
 
 
   #hash(...tags: P[0]) {
     tags = tags.sort();
-    return tags.join("#~#");
+    return tags.join("\x00");
   }
 
   #inter<K extends P[0][number]>(...tags: K[]) {
@@ -88,7 +87,6 @@ export class MK2MT<P extends [string[], any]> {
     });
 
     const hash = this.#hash(...tags);
-    this.#h2k.set(hash, tags);
 
     let values = this.#v2h.get(value);
     if (values == null) this.#v2h.set(
@@ -130,7 +128,7 @@ export class MK2MT<P extends [string[], any]> {
 
     for (const value of this.#inter(...tags)) {
       for (const hash of [...this.#v2h.get(value) ?? []]) {
-        const t = this.#h2k.get(hash);
+        const t = hash.split("\x00");
         if (t == null) continue;
 
         if (!tags.every(tag =>
