@@ -1,50 +1,102 @@
 
 
+type HasIntersect<T extends any[], S extends any[]> =
+  T[number] extends infer T
+    ? S[number] extends infer S
+      ? T extends S ? true :
+        S extends T ? true : false
+      : never
+    : never;
+
+
+type FilterTuple<T extends any[], S extends any[]> =
+  T extends [infer F, ...infer R]
+    ? HasIntersect<[F], S> extends false
+      ? [F, ...FilterTuple<R, S>]
+      : FilterTuple<R, S>
+    : T;
+
+
+type Unionify<T extends string[]> =
+  T extends [infer F extends string, ...infer R extends string[]]
+    ? [F] | Unionify<R> : never;
+
+
+type  Compare<S extends [string], T extends [string]> = _Compare<S, S, T, T>;
+type _Compare<S extends [string], S2 extends [string], T extends [string], T2 extends [string]> =
+  T extends infer V extends [string]
+    ? V[number] extends S[number]
+      ? S extends infer U extends [string]
+        ? V[number] extends U[number]
+          ? true | Compare<Exclude<S2, U>, Exclude<T2, V>>
+          : never
+        : false
+      : false
+    : false;
+
+
 export class MK2MT<P extends [string[], any]> {
+  #val: P extends [[], infer V] ? V : never = undefined as any;
+
   #k2v = new Map<P[0][number], Set<P[1]>>();
-  #val = new Set<P[1]>();
+  #v2h = new Map<P[1], Set<string>>();
+  #h2k = new Map<string, P[0]>();
 
-  public get tags  () { return this.#k2v.keys(); }
-  public get values() { return this.#val;        }
 
-  public set<V extends P[1]>(
-    value: V,
-    ...tags: P extends [infer K, infer T]
-      ? V extends T ? K : never : never
-  ) {
+  #hash(...tags: P[0]) {
+    tags = tags.sort();
+    return tags.join("#~#");
+  }
+
+  #inter<K extends P[0][number]>(...tags: K[]) {
+    let result = this.values;
+
     for (const tag of tags) {
+      const values = this.#k2v.get(tag);
+      if (values == null) return [];
+
+      result = result.filter(v => values.has(v));
+      if (!result.length) return [];
+    }
+
+    return result;
+  }
+
+
+  public get tags() {
+    return [...this.#k2v.keys()];
+  }
+
+  public get values() {
+    return [
+      ...(this.#v2h.keys()),
+      ...(this.#val ? [this.#val] : [])
+    ];
+  }
+
+  public set<V extends P[1]>(value: V, ...tags: P extends [infer K, infer T] ? V extends T ? K : never : never) {
+    if (!tags.length) {
+      this.#val = value;
+      return;
+    }
+
+    tags.forEach(tag => {
       let values = this.#k2v.get(tag);
       if (values == null) this.#k2v.set(
         tag, values = new Set());
       values.add(value);
-    }
+    });
 
-    this.#val.add(value);
+    const hash = this.#hash(...tags);
+    this.#h2k.set(hash, tags);
+
+    let values = this.#v2h.get(value);
+    if (values == null) this.#v2h.set(
+      value, values = new Set());
+    values.add(hash);
   }
 
-  public get<K extends P[0][number]>(...tags: K[]):
-    P extends [infer T, infer V]
-      ? T extends string[]
-        ? [K] extends [T[number]]
-          ? V[] | undefined
-          : never
-        : never
-      : never
-  {
-    const vals = tags.map(tag => this.#k2v.get(tag) ?? new Set());
-    if (vals.length === 0) return undefined as any;
-
-    let intersection = new Set(vals[0]);
-    for (const val of vals)
-      intersection = new Set([...intersection]
-        .filter(v => val.has(v)));
-
-    if (intersection.size === 0)
-      return undefined as any;
-    return [...intersection] as any;
-  }
-
-  public getExact<K extends P[0]>(...tags: K):
+  public get<K extends P[0]>(...tags: K):
     P extends [infer T, infer V]
       ? T extends string[]
         ? K extends T
@@ -53,11 +105,43 @@ export class MK2MT<P extends [string[], any]> {
         : never
       : never
   {
-    const vals = this.get(...tags);
+    if (!tags.length)
+      return this.#val as any;
 
-    if (vals        ==  null) return undefined as any;
-    if (vals.length !== 1   ) return undefined as any;
+    const hash = this.#hash(...tags);
 
-    return vals[0];
+    return this.#inter(...tags).find(v =>
+      this.#v2h.get(v)?.has(hash)) as any;
+  }
+
+  public fuzzyGet<Ks extends P[0][number][]>(...tags: Ks):
+    MK2MT<Compare<Unionify<P[0]>, Unionify<Ks>> extends true
+      ? P extends [infer T extends string[], infer V]
+        ? Ks[number] extends T[number]
+          ? [FilterTuple<T, Ks>, V]
+          : never
+        : never
+      : never>
+  {
+    const mk2mt = new MK2MT<any>();
+
+    if (!tags.length)
+      mk2mt.set(this.#val);
+
+    for (const value of this.#inter(...tags)) {
+      for (const hash of [...this.#v2h.get(value) ?? []]) {
+        const t = this.#h2k.get(hash);
+        if (t == null) continue;
+
+        if (!tags.every(tag =>
+              t!.includes(tag)))
+          continue;
+
+        mk2mt.set(value, ...t.filter(
+          tag => !tags.includes(tag)));
+      }
+    }
+
+    return mk2mt;
   }
 }

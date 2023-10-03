@@ -1,11 +1,11 @@
 {
   "name": "mk2mt",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "tsc && node dist/test.js",
-    "prepublish": "rm -rf dist && tsc"
+    "prepublish": "tsc && rm -rf dist/test.*"
   },
   "author": "TNThung",
   "license": "MIT",

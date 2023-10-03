@@ -16,14 +16,14 @@ const tmp = new MK2MT<
   | [["a", "d"|"e"], number ]   // map ("a", "d") and ("a", "e") to number
 >();
 
-tmp.set(1, "a");       // OK
-tmp.set(2, "b");       // OK
-tmp.set(3, "c");       // Error
-tmp.set(4, "d");       // Error
-tmp.set(5, "a", "d");  // OK
+tmp.set(1, "a");        // OK
+tmp.set(2, "b");        // OK
+tmp.set(3, "c");        // Error
+tmp.set(4, "d");        // Error
+tmp.set(5, "a", "d");   // OK
 
-tmp.get("a");          // type is undefined | number[] | boolean[]
-tmp.get("a", "d");     // type is undefined | number[]
-tmp.get("a", "e");     // type is undefined | number[]
-tmp.get("d");          // type is undefined | number[]
+tmp.fuzzyGet("a");      // type is undefined | number[] | boolean[]
+tmp.fuzzyGet("a", "d"); // type is undefined | number[]
+tmp.fuzzyGet("a", "e"); // type is undefined | number[]
+tmp.fuzzyGet("d");      // type is undefined | number[]
 ```
